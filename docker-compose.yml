@@ -1,0 +1,44 @@
+version: '3.1'
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: model_logger_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: Model_Logger
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql  # Persist MySQL data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Initialize MySQL database
+    networks:
+      - app-network
+
+  flask-app:
+    build:
+      context: ./app
+    container_name: flask_app
+    depends_on:
+      - mysql
+    environment:
+      - MYSQL_HOST=model_logger_db
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=user_password
+      - MYSQL_DB=Model_Logger
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./app:/app  # Map app folder to allow live changes
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql_data:  # Define named volume for MySQL data persistence
